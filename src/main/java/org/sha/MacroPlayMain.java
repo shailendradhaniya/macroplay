@@ -7,6 +7,9 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
 import java.util.Timer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.sha.model.MacroInfo;
@@ -27,17 +30,22 @@ public class MacroPlayMain {
 		String macroDurationForPlay=props.getProperty("macroPlayDurationInMins");
 		Long macroDurationInMillis=Long.parseLong(macroDurationForPlay)*60000;
 		MacroInfo macroInfo=play.readMacroJson(macroInfoFilePath);
-		List<RobotTask> timerTasks=MacroUtil.getTimerTaskList(macroInfo);
 		StopWatch stopWatch=new StopWatch();
 		stopWatch.start();
-		Timer timer;
+		ScheduledExecutorService scheduledExecutorService=Executors.newSingleThreadScheduledExecutor();
 		while(stopWatch.getTime()<=macroDurationInMillis) {
-		timer=new Timer();
+		List<RobotTask> timerTasks=MacroUtil.getTimerTaskList(macroInfo);
 		for(RobotTask task:timerTasks) {
 			System.out.println(stopWatch.getTime());
-				timer.schedule(task,task.getEventInfo().getDelaySeconds());
+			scheduledExecutorService.schedule(task, task.getEventInfo().getDelaySeconds(), TimeUnit.MILLISECONDS);
+			//timer.schedule(task,task.getEventInfo().getDelaySeconds());
 		}
-		
+		try {
+			Thread.sleep((macroInfo.getDuration()+10000));
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		}
 		stopWatch.stop();
 		/**/
